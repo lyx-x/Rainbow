@@ -3,7 +3,6 @@ import torch
 from torch import nn, optim
 from torch.autograd import Variable
 
-from memory import Transition
 from model import DQN
 
 
@@ -41,13 +40,11 @@ class Agent():
 
   def learn(self, mem):
     transitions = mem.sample(self.batch_size)
-    batch = Transition(*zip(*transitions))  # Transpose the batch
-
-    states = Variable(torch.stack(batch.state, 0))
-    actions = torch.LongTensor(batch.action)
-    rewards = torch.Tensor(batch.reward)
-    non_final_mask = torch.Tensor(tuple(map(lambda s: s is not None, batch.next_state)))  # Only process non-terminal next states
-    next_states = Variable(torch.stack(tuple(s for s in batch.next_state if s is not None), 0), volatile=True)
+    states = Variable(torch.stack(transitions.state, 0))
+    actions = torch.LongTensor(transitions.action)
+    rewards = torch.Tensor(transitions.reward)
+    non_final_mask = torch.Tensor(tuple(map(lambda s: s is not None, transitions.next_state)))  # Only process non-terminal next states
+    next_states = Variable(torch.stack(tuple(s for s in transitions.next_state if s is not None), 0), volatile=True)
 
     # Calculate current state probabilities
     ps = self.policy_net(states)  # Probabilities p(s_t, ·; θpolicy)

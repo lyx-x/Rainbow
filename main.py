@@ -54,8 +54,6 @@ action_space = env.action_space()
 # Agent
 dqn = Agent(args, env)
 mem = ReplayMemory(args.memory_capacity)
-
-
 # Training setup
 T, done = 0, True
 
@@ -65,11 +63,9 @@ while T < args.evaluation_size:
   if done:
     state, done = env.reset(), False
 
-  next_state, _, done = env.step(random.randint(0, action_space - 1))
-  T += 1
   val_mem.append(state, None, None, None)
-  state = next_state
-
+  state, _, done = env.step(random.randint(0, action_space - 1))
+  T += 1
 
 if args.evaluate:
   dqn.eval()  # Set DQN (policy network) to evaluation mode
@@ -91,7 +87,9 @@ else:
       reward = max(min(reward, args.reward_clip), -args.reward_clip)  # Clip rewards
     T += 1
 
-    mem.append(state.data, action, next_state, reward)  # Append transition to memory
+    mem.append(state.data, action, reward, done)  # Append transition to memory
+    if done:
+      mem.append(next_state, None, None, None)  # TODO: Work out if this is correct
 
     # Train and test
     if T >= args.learn_start:

@@ -2,7 +2,8 @@ import random
 from collections import deque, namedtuple
 
 
-Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
+HalfTransition = namedtuple('Transition', ('state', 'action', 'reward', 'done'))
+Transition = namedtuple('Transition', ('state', 'action', 'reward', 'next_state'))
 
 
 # TODO: Discretise memory?
@@ -12,10 +13,17 @@ class ReplayMemory():
     self.memory = deque([], maxlen=capacity)
 
   def append(self, *args):
-    self.memory.append(Transition(*args))
+    self.memory.append(HalfTransition(*args))
 
   def sample(self, batch_size):
-    return random.sample(self.memory, batch_size)
+    transitions = []
+    for _ in range(batch_size):  # TODO: Get efficient indexing for retrieving valid transitions
+      i = random.randrange(len(self) - 1)
+      s, a, r, d = self.memory[i]
+      ns, _, _, _ = self.memory[i + 1]  # TODO: Make sure ns is None for terminal transitions
+      transitions.append(Transition(s, a, r, ns))
+    transitions = Transition(*zip(*transitions))  # Transpose the batch
+    return transitions
 
   def __len__(self):
     return len(self.memory)
